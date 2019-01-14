@@ -1,0 +1,8 @@
+[metadata]
+name = "Thieving"
+description = "Adds functionality for the Thieving skill."
+
+version = "1.0"
+authors = [
+  "AshotN"
+]
