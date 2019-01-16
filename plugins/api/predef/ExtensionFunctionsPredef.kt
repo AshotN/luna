@@ -2,6 +2,11 @@ package api.predef
 
 import io.luna.game.model.Position
 import io.luna.game.model.World
+import io.luna.game.model.`object`.GameObject
+import io.luna.game.model.`object`.ObjectDirection
+import io.luna.game.model.`object`.ObjectType
+import io.luna.game.model.chunk.ChunkManager
+import io.luna.game.model.item.GroundItem
 import io.luna.game.model.mob.Npc
 import io.luna.game.model.mob.Player
 import io.luna.game.model.mob.inter.AbstractInterfaceSet
@@ -33,10 +38,93 @@ fun Player.sendConfig(id: Int, state: Int) = queue(ConfigMessageWriter(id, state
 /**
  * Spawns an [Npc].
  */
-fun World.spawnNpc(id: Int, x: Int, y: Int, z: Int = 0): Npc {
-    val spawn = Npc(ctx, id, Position(x, y, z))
-    npcs.add(spawn)
-    return spawn
+fun World.addNpc(npc: Npc): Npc {
+    npcs.add(npc)
+    return npc
+}
+
+/**
+ * Spawns an [Npc].
+ */
+fun World.addNpc(id: Int, x: Int, y: Int, z: Int = 0): Npc {
+    val npc = Npc(ctx, id, Position(x, y, z))
+    return addNpc(npc)
+}
+
+/**
+ * Despawns an [Npc].
+ */
+fun World.removeNpc(npc: Npc) = npcs.remove(npc)
+
+/**
+ * Spawns a [GameObject].
+ */
+fun World.addObject(obj: GameObject): GameObject {
+    return when {
+        objects.add(obj) -> obj
+        else -> throw IllegalStateException("$obj Could not be spawned!");
+    }
+}
+
+/**
+ * Spawns a [GameObject] for [plr].
+ */
+fun World.addObject(id: Int,
+                    x: Int,
+                    y: Int,
+                    z: Int = 0,
+                    type: ObjectType = ObjectType.DEFAULT,
+                    direction: ObjectDirection = ObjectDirection.WEST,
+                    plr: Player? = null): GameObject {
+    val obj = GameObject(ctx, id, Position(x, y, z), type, direction, Optional.ofNullable(plr))
+    return addObject(obj)
+}
+
+/**
+ * Despawns a [GameObject].
+ */
+fun World.removeObject(obj: GameObject): Boolean = objects.remove(obj)
+
+/**
+ * Despawns all [GameObject]s on [pos] that match [filter].
+ */
+fun World.removeObject(pos: Position, filter: GameObject.() -> Boolean = { true }): Boolean {
+    return objects.removeFromPosition(pos, filter)
+}
+
+/**
+ * Spawns a [GroundItem].
+ */
+fun World.addItem(item: GroundItem): GroundItem {
+    return when {
+        items.add(item) -> item
+        else -> throw IllegalStateException("$item Could not be spawned!");
+    }
+}
+
+/**
+ * Spawns a [GroundItem] for [plr].
+ */
+fun World.addItem(id: Int,
+                  amount: Int = 1,
+                  x: Int,
+                  y: Int,
+                  z: Int = 0,
+                  plr: Player? = null): GroundItem {
+    val item = GroundItem(ctx, id, amount, Position(x, y, z), Optional.ofNullable(plr))
+    return addItem(item)
+}
+
+/**
+ * Despawns a [GroundItem].
+ */
+fun World.removeItem(item: GroundItem): Boolean = items.remove(item)
+
+/**
+ * Despawns all [GroundItem]s on [pos] that match [filter].
+ */
+fun World.removeItem(pos: Position, filter: GroundItem.() -> Boolean = { true }): Boolean {
+    return items.removeFromPosition(pos, filter)
 }
 
 /**
@@ -59,6 +147,33 @@ fun World.scheduleOnce(delay: Int, action: (Task) -> Unit) {
         it.cancel()
     }
 }
+
+
+/*******************************************
+ *                                         *
+ *  [ChunkManager] ext. functions  *
+ *                                         *
+ ******************************************/
+
+/**
+ * Shortcut to [ChunkManager.getViewableEntities] for [Player]s.
+ */
+fun ChunkManager.getViewablePlayers(position: Position) = getViewableEntities<Player>(position, TYPE_PLAYER)
+
+/**
+ * Shortcut to [ChunkManager.getViewableEntities] for [Npc]s.
+ */
+fun ChunkManager.getViewableNpcs(position: Position) = getViewableEntities<Npc>(position, TYPE_NPC)
+
+/**
+ * Shortcut to [ChunkManager.getViewableEntities] for [GroundItem]s.
+ */
+fun ChunkManager.getViewableItems(position: Position) = getViewableEntities<GroundItem>(position, TYPE_ITEM)
+
+/**
+ * Shortcut to [ChunkManager.getViewableEntities] for [GameObject]s.
+ */
+fun ChunkManager.getViewableObjects(position: Position) = getViewableEntities<GameObject>(position, TYPE_OBJECT)
 
 
 /*******************************************
