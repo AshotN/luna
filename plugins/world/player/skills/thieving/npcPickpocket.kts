@@ -5,10 +5,10 @@ import io.luna.game.event.impl.NpcClickEvent.NpcSecondClickEvent
 import io.luna.game.model.item.Item
 import io.luna.game.model.mob.Animation
 import io.luna.game.model.mob.Player
-import world.player.skills.thieving.NPC
+import world.player.skills.thieving.PickpocketNpc
 
 
-fun add(npc: NPC, plr: Player){
+fun add(npc: PickpocketNpc, plr: Player){
     val inv = plr.inventory
     if(npc.stealTable.count() > 1) {
 
@@ -24,9 +24,9 @@ fun add(npc: NPC, plr: Player){
 }
 
 /**
- * Attempts to steal from [NPC].
+ * Attempts to steal from [world.player.skills.thieving.PickpocketNpc].
  */
-fun npcPickpocket(msg: NpcClickEvent, npc: NPC) : Boolean {
+fun npcPickpocket(msg: NpcClickEvent, npc: PickpocketNpc) : Boolean {
     val skill = msg.plr.skill(SKILL_THIEVING)
 
     return if (skill.level < npc.level) {
@@ -42,8 +42,8 @@ fun npcPickpocket(msg: NpcClickEvent, npc: NPC) : Boolean {
 }
 
 
-//Pickpocket NPC Event
+//PickpocketNpc Event
 
 on(NpcSecondClickEvent::class) {
-    npcPickpocket(this, NPC.from(this.npc.id)!!)
+    npcPickpocket(this, PickpocketNpc.from(this.npc.id)!!)
 }
