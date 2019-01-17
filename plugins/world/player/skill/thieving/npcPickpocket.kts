@@ -2,25 +2,18 @@ import api.predef.SKILL_THIEVING
 import api.predef.on
 import io.luna.game.event.impl.NpcClickEvent
 import io.luna.game.event.impl.NpcClickEvent.NpcSecondClickEvent
-import io.luna.game.model.item.Item
 import io.luna.game.model.mob.Animation
 import io.luna.game.model.mob.Player
+import io.luna.game.model.mob.Skill
 import world.player.skills.thieving.PickpocketNpc
 
 
-fun add(npc: PickpocketNpc, plr: Player){
+fun add(npc: PickpocketNpc, plr: Player, skill: Skill){
     val inv = plr.inventory
-    if(npc.stealTable.count() > 1) {
+    val stolenItem = npc.lootTable.pick()
 
-        val availableItems = npc.stealTable.filter { it.levelRequired <= plr.skill(SKILL_THIEVING).level }
-        val randomItem = availableItems.random() //TODO: Take into account drop rates
-        val item = Item(randomItem.itemId, randomItem.itemQuantity.random())
-        inv.add(item)
-        return
-    }
-
-    val amount = npc.stealTable[0].itemQuantity.random()
-    inv.add(Item(995, amount))
+    inv.add(stolenItem)
+    skill.addExperience(npc.experience)
 }
 
 /**
@@ -36,7 +29,7 @@ fun npcPickpocket(msg: NpcClickEvent, npc: PickpocketNpc) : Boolean {
     } else {
         // Start stealing!
         msg.plr.animation(Animation(881))
-        add(npc, msg.plr)
+        add(npc, msg.plr, skill)
         true
     }
 }
