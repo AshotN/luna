@@ -5,18 +5,25 @@ import io.luna.LunaContext;
 import io.luna.game.model.Entity;
 import io.luna.game.model.EntityType;
 import io.luna.game.model.Position;
+import io.luna.game.model.StationaryEntity;
 import io.luna.game.model.def.ItemDefinition;
+import io.luna.game.model.mob.Player;
+import io.luna.net.msg.GameMessageWriter;
+import io.luna.net.msg.out.AddGroundItemMessageWriter;
+import io.luna.net.msg.out.RemoveGroundItemMessageWriter;
 
-import java.util.Objects;
+import java.util.Optional;
+import java.util.OptionalInt;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * An {@link Entity} implementation representing an item on a tile.
  *
  * @author lare96 <http://github.com/lare96>
  */
-public class GroundItem extends Entity {
+public final class GroundItem extends StationaryEntity {
 
     /**
      * The item identifier.
@@ -29,6 +36,11 @@ public class GroundItem extends Entity {
     private final int amount;
 
     /**
+     * The current amount of expiration minutes.
+     */
+    private OptionalInt expireMinutes = OptionalInt.of(0);
+
+    /**
      * Creates a new {@link GroundItem}.
      *
      * @param context The context instance.
@@ -36,8 +48,8 @@ public class GroundItem extends Entity {
      * @param amount The item amount.
      * @param position The position of the item.
      */
-    public GroundItem(LunaContext context, int id, int amount, Position position) {
-        super(context, EntityType.ITEM);
+    public GroundItem(LunaContext context, int id, int amount, Position position, Optional<Player> player) {
+        super(context, position, EntityType.ITEM, player);
         checkArgument(ItemDefinition.isIdValid(id), "Invalid item identifier.");
         checkArgument(amount > 0, "Amount must be above 0.");
 
@@ -48,30 +60,26 @@ public class GroundItem extends Entity {
 
         this.id = id;
         this.amount = amount;
-
-        setPosition(position);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj instanceof GroundItem) {
-            GroundItem other = (GroundItem) obj;
-            return id == other.id && amount == other.amount;
-        }
-        return false;
-    }
-
-    @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(this).add("id", id).add("amount", amount).toString();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, amount);
+        return System.identityHashCode(this);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return this == obj;
+    }
+
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this).
+                add("id", id).
+                add("amount", amount).
+                add("x", position.getX()).
+                add("y", position.getY()).
+                add("z", position.getZ()).toString();
     }
 
     @Override
@@ -79,13 +87,60 @@ public class GroundItem extends Entity {
         return 1;
     }
 
+    @Override
+    protected GameMessageWriter showMessage(int offset) {
+        return new AddGroundItemMessageWriter(id, amount, offset);
+    }
+
+    @Override
+    protected GameMessageWriter hideMessage(int offset) {
+        return new RemoveGroundItemMessageWriter(id, offset);
+    }
+
     /**
-     * Returns this ground item as an {@link Item}.
+     * Sets whether or not this item will expire or not.
      *
-     * @return The converted ground item.
+     * @param expire The value.
      */
-    public Item toItem() {
-        return new Item(id, amount);
+    public void setExpire(boolean expire) {
+        if (expire && !expireMinutes.isPresent()) {
+            expireMinutes = OptionalInt.of(0);
+        } else if (!expire && expireMinutes.isPresent()) {
+            expireMinutes = OptionalInt.empty();
+        }
+    }
+
+    /**
+     * Sets the current expiration minutes for this item. Will throw {@link IllegalStateException} if this item
+     * does not expire.
+     */
+    public void setExpireMinutes(int minutes) {
+        checkState(isExpire(), "This item does not expire.");
+        expireMinutes = OptionalInt.of(minutes);
+    }
+
+    /**
+     * Retrieves the current expiration minutes for this item. Will throw {@link IllegalStateException} if this item
+     * does not expire.
+     */
+    public int getExpireMinutes() {
+        return expireMinutes.getAsInt();
+    }
+
+    /**
+     * Determines if this item expires.
+     *
+     * @return {@code true} if this item expires.
+     */
+    public boolean isExpire() {
+        return expireMinutes.isPresent();
+    }
+
+    /**
+     * Retrieves the item definition instance.
+     */
+    public ItemDefinition def() {
+        return ItemDefinition.ALL.retrieve(id);
     }
 
     /**
