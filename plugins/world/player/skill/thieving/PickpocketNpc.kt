@@ -1,7 +1,6 @@
-package world.player.skills.thieving
+package world.player.skill.thieving
 
 import api.item.LootTable
-import api.item.LootTableItem
 import api.predef.*
 import io.luna.util.Rational
 
@@ -14,7 +13,7 @@ enum class PickpocketNpc(val id: List<Int>,
                 val experience: Double,
                 val stunDamage: IntRange,
                 val stunTime: Int,
-                val formattedName: String) {
+                val formattedName: String){
 
     MAN(id = listOf(1,2,3),
             level = 1,

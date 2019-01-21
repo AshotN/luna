@@ -1,11 +1,11 @@
-import api.predef.SKILL_THIEVING
-import api.predef.on
+package world.player.skill.thieving
+
+import api.predef.*
 import io.luna.game.event.impl.NpcClickEvent
 import io.luna.game.event.impl.NpcClickEvent.NpcSecondClickEvent
 import io.luna.game.model.mob.Animation
 import io.luna.game.model.mob.Player
 import io.luna.game.model.mob.Skill
-import world.player.skills.thieving.PickpocketNpc
 
 
 fun add(npc: PickpocketNpc, plr: Player, skill: Skill){
@@ -28,8 +28,8 @@ fun npcPickpocket(msg: NpcClickEvent, npc: PickpocketNpc) : Boolean {
         false
     } else {
         // Start stealing!
-        msg.plr.animation(Animation(881))
-        add(npc, msg.plr, skill)
+        msg.plr.sendMessage("steallllll")
+        PickpocketAction(npc, msg.plr)
         true
     }
 }
@@ -38,5 +38,8 @@ fun npcPickpocket(msg: NpcClickEvent, npc: PickpocketNpc) : Boolean {
 //PickpocketNpc Event
 
 on(NpcSecondClickEvent::class) {
+    npcPickpocket(this, PickpocketNpc.from(this.npc.id)!!)
+}
+on(NpcClickEvent.NpcFirstClickEvent::class) {
     npcPickpocket(this, PickpocketNpc.from(this.npc.id)!!)
 }
