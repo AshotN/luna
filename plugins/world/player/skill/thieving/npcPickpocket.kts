@@ -29,7 +29,7 @@ fun npcPickpocket(msg: NpcClickEvent, npc: PickpocketNpc) : Boolean {
     } else {
         // Start stealing!
         msg.plr.sendMessage("steallllll")
-        PickpocketAction(npc, msg.plr)
+        msg.plr.submitAction(PickpocketAction(npc, msg.plr))
         true
     }
 }
